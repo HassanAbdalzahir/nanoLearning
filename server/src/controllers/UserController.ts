@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserViewModel } from '@/viewmodels/UserViewModel';
-import { UpdateUserData, CreateStudentData } from '@/models/User';
-import { createError } from '@/middleware/errorHandler';
+import { UserViewModel } from '../viewmodels/UserViewModel';
+import { UpdateUserData, CreateStudentData } from '../models/User';
+import { createError } from '../middleware/errorHandler';
 
 export class UserController {
   private userViewModel: UserViewModel;

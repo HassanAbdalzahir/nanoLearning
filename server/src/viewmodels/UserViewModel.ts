@@ -1,5 +1,5 @@
-import { User, IUser, CreateStudentData, UpdateUserData } from '@/models/User';
-import { logger } from '@/utils/logger';
+import { User, IUser, CreateStudentData, UpdateUserData } from '../models/User';
+import { logger } from '../utils/logger';
 
 export class UserViewModel {
   async getAllUsers(): Promise<IUser[]> {

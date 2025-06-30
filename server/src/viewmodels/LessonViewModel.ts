@@ -3,8 +3,8 @@ import {
   ILesson,
   CreateLessonData,
   UpdateLessonData,
-} from '@/models/Lesson';
-import { Course } from '@/models/Course';
+} from '../models/Lesson';
+import { Course } from '../models/Course';
 import mongoose from 'mongoose';
 
 export class LessonViewModel {

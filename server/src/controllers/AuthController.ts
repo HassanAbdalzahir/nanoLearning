@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthViewModel } from '@/viewmodels/AuthViewModel';
-import { createError } from '@/middleware/errorHandler';
+import { AuthViewModel } from '../viewmodels/AuthViewModel';
+import { createError } from '../middleware/errorHandler';
 
 const authVM = new AuthViewModel();
 

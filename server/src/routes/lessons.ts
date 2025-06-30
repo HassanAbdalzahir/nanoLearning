@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { LessonController } from '@/controllers/LessonController';
-import { asyncHandler } from '@/middleware/asyncHandler';
-import { auth } from '@/middleware/auth';
+import { LessonController } from '../controllers/LessonController';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { auth } from '../middleware/auth';
 
 const router = Router();
 const lessonController = new LessonController();

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { LessonViewModel } from '@/viewmodels/LessonViewModel';
-import { createError } from '@/middleware/errorHandler';
-import { AuthRequest } from '@/middleware/auth';
+import { LessonViewModel } from '../viewmodels/LessonViewModel';
+import { createError } from '../middleware/errorHandler';
+import { AuthRequest } from '../middleware/auth';
 
 const lessonVM = new LessonViewModel();
 
@@ -207,7 +207,7 @@ export class LessonController {
         throw new Error('Enrollment ID is required');
       }
       // Find the enrollment and verify it belongs to the student
-      const { Enrollment } = await import('@/models/Enrollment');
+      const { Enrollment } = await import('../models/Enrollment');
       const enrollment = await Enrollment.findOne({
         _id: enrollmentId,
         studentId,

@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
-import { CourseViewModel } from '@/viewmodels/CourseViewModel';
-import { createError } from '@/middleware/errorHandler';
-import { AuthRequest } from '@/middleware/auth';
+import { CourseViewModel } from '../viewmodels/CourseViewModel';
+import { createError } from '../middleware/errorHandler';
+import { AuthRequest } from '../middleware/auth';
 
 const courseVM = new CourseViewModel();
 

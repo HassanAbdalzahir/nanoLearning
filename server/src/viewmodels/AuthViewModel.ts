@@ -3,9 +3,9 @@ import {
   IUser,
   CreateStudentData,
   CreateTeacherData,
-} from '@/models/User';
+} from '../models/User';
 import jwt from 'jsonwebtoken';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '@/utils/email';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email';
 import type { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 

@@ -1,17 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { config } from '@/config';
-import { errorHandler } from '@/middleware/errorHandler';
-import { loggerMiddleware } from '@/middleware/logger';
-import userRoutes from '@/routes/users';
-import healthRoutes from '@/routes/health';
-import authRoutes from '@/routes/auth';
-import courseRoutes from '@/routes/courses';
-import lessonRoutes from '@/routes/lessons';
-import uploadRoutes from '@/routes/upload';
-import enrollmentRoutes from '@/routes/enrollments';
-import { logger } from '@/utils/logger';
+import { config } from './config';
+import { errorHandler } from './middleware/errorHandler';
+import { loggerMiddleware } from './middleware/logger';
+import userRoutes from './routes/users';
+import healthRoutes from './routes/health';
+import authRoutes from './routes/auth';
+import courseRoutes from './routes/courses';
+import lessonRoutes from './routes/lessons';
+import uploadRoutes from './routes/upload';
+import enrollmentRoutes from './routes/enrollments';
+import { logger } from './utils/logger';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cookieParser = require('cookie-parser');
 

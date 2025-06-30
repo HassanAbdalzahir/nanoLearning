@@ -3,8 +3,8 @@ import {
   uploadVideo,
   uploadAttachment,
   uploadCoverImage,
-} from '@/utils/cloudinary';
-import { auth } from '@/middleware/auth';
+} from '../utils/cloudinary';
+import { auth } from '../middleware/auth';
 
 const router = Router();
 
