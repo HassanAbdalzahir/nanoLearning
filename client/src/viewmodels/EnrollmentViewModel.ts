@@ -201,20 +201,12 @@ export class EnrollmentViewModel {
     try {
       await enrollmentService.unenrollFromCourse(enrollmentId);
 
-      // Remove from enrollments and add back to available courses
-      const enrollment = this.state.enrollments.find(
-        (e) => e._id === enrollmentId
-      );
+      // Remove from enrollments
       this.setState({
         enrollments: this.state.enrollments.filter(
           (e) => e._id !== enrollmentId
         ),
-        availableCourses: enrollment
-          ? [
-              enrollment.courseId as AvailableCourse,
-              ...this.state.availableCourses,
-            ]
-          : this.state.availableCourses,
+        // Don't add back to available courses as the course might not be available anymore
         currentEnrollment:
           this.state.currentEnrollment?._id === enrollmentId
             ? null

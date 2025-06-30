@@ -88,7 +88,7 @@ export default function CourseForm({
       newErrors.coverImage = "Cover image is required";
     }
 
-    if (formData.price < 0) {
+    if (typeof formData.price === "number" && formData.price < 0) {
       newErrors.price = "Price cannot be negative";
     }
 

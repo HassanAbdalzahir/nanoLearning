@@ -162,10 +162,12 @@ export class AuthViewModel {
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Login failed";
       this.setState({
         isLoading: false,
-        error: error.message || "Login failed",
+        error: errorMessage,
       });
     }
   }
@@ -195,10 +197,12 @@ export class AuthViewModel {
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Signup failed";
       this.setState({
         isLoading: false,
-        error: error.message || "Signup failed",
+        error: errorMessage,
       });
     }
   }
@@ -220,10 +224,12 @@ export class AuthViewModel {
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Signup failed";
       this.setState({
         isLoading: false,
-        error: error.message || "Signup failed",
+        error: errorMessage,
       });
     }
   }
@@ -243,10 +249,14 @@ export class AuthViewModel {
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to request password reset";
       this.setState({
         isLoading: false,
-        error: error.message || "Failed to request password reset",
+        error: errorMessage,
       });
     }
   }
@@ -263,10 +273,12 @@ export class AuthViewModel {
       const response = await authService.verifyResetCode(email, resetCode);
       this.setState({ isLoading: false, error: null });
       return response.valid;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to verify reset code";
       this.setState({
         isLoading: false,
-        error: error.message || "Failed to verify reset code",
+        error: errorMessage,
       });
       return false;
     }
@@ -303,10 +315,12 @@ export class AuthViewModel {
       );
       this.setState({ isLoading: false, error: null });
       return response.success;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reset password";
       this.setState({
         isLoading: false,
-        error: error.message || "Failed to reset password",
+        error: errorMessage,
       });
       return false;
     }

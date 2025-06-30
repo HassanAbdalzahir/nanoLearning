@@ -48,11 +48,6 @@ export function ThemeToggle() {
       isDark: newTheme,
     });
     window.dispatchEvent(event);
-
-    // Force a repaint to ensure styles are applied
-    document.body.style.display = "none";
-    document.body.offsetHeight; // Force reflow
-    document.body.style.display = "";
   };
 
   // Prevent hydration mismatch
