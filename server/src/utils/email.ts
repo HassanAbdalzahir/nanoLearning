@@ -1,11 +1,22 @@
-import fetch from 'node-fetch';
+// Use dynamic import for node-fetch to avoid ESM issues
+let fetch: any;
+
+// Initialize fetch function
+async function initFetch() {
+  if (!fetch) {
+    const nodeFetch = await import('node-fetch');
+    fetch = nodeFetch.default;
+  }
+  return fetch;
+}
 
 export async function sendWelcomeEmail(email: string, name: string) {
   const apiKey = process.env['RESEND_API_KEY'];
   const fromEmail = process.env['FROM_EMAIL'] || 'contact@nanocode.online';
   if (!apiKey) throw new Error('Resend API key not set');
   // Placeholder: Use Resend API directly
-  const res = await fetch('https://api.resend.com/emails', {
+  const fetchFn = await initFetch();
+  const res = await fetchFn('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -31,7 +42,8 @@ export async function sendPasswordResetEmail(
   const fromEmail = process.env['FROM_EMAIL'] || 'contact@nanocode.online';
   if (!apiKey) throw new Error('Resend API key not set');
 
-  const res = await fetch('https://api.resend.com/emails', {
+  const fetchFn = await initFetch();
+  const res = await fetchFn('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
