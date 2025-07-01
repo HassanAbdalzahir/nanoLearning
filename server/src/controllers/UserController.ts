@@ -18,7 +18,7 @@ export class UserController {
     try {
       const users = await this.userViewModel.getAllUsers();
       res.json({ users });
-    } catch (error) {
+    } catch {
       next(createError('Failed to fetch users', 500));
     }
   };
@@ -44,7 +44,7 @@ export class UserController {
       }
 
       res.json({ user });
-    } catch (error) {
+    } catch {
       next(createError('Failed to fetch user', 500));
     }
   };
@@ -79,7 +79,7 @@ export class UserController {
 
       const newUser = await this.userViewModel.createUser(userData);
       res.status(201).json({ user: newUser });
-    } catch (error) {
+    } catch {
       next(createError('Failed to create user', 500));
     }
   };
@@ -107,7 +107,7 @@ export class UserController {
       }
 
       res.json({ user: updatedUser });
-    } catch (error) {
+    } catch {
       next(createError('Failed to update user', 500));
     }
   };
@@ -133,7 +133,7 @@ export class UserController {
       }
 
       res.status(204).send();
-    } catch (error) {
+    } catch {
       next(createError('Failed to delete user', 500));
     }
   };

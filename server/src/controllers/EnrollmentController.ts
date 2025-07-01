@@ -1,15 +1,35 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { Enrollment } from '../models/Enrollment';
 import { Course } from '../models/Course';
 import { logger } from '../utils/logger';
+import { AuthRequest } from '../middleware/auth';
+
+interface CourseWithLessons {
+  _id: string;
+  lessons: Array<{
+    _id: string;
+    title: string;
+    description: string;
+    contentType: string;
+    content: string;
+    order: number;
+  }>;
+}
 
 export class EnrollmentController {
   // Enroll in a course
   static enrollInCourse = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: AuthRequest, res: Response): Promise<void> => {
       const { courseId } = req.params;
-      const studentId = (req as any).user._id;
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       // Check if course exists and is published
       const course = await Course.findById(courseId);
@@ -77,8 +97,15 @@ export class EnrollmentController {
 
   // Get student's enrollments
   static getStudentEnrollments = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-      const studentId = (req as any).user._id;
+    async (req: AuthRequest, res: Response): Promise<void> => {
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       const enrollments = await Enrollment.find({
         studentId,
@@ -104,26 +131,39 @@ export class EnrollmentController {
       // Add totalLessons and completedLessonsCount to each enrollment
       const enrollmentsWithCounts = await Promise.all(
         enrollments.map(async (enrollment) => {
-          let lessons: any[] = [];
+          let lessons: Array<{
+            _id: string;
+            title: string;
+            description: string;
+            contentType: string;
+            content: string;
+            order: number;
+          }> = [];
           if (
             enrollment.courseId &&
             typeof enrollment.courseId === 'object' &&
             'lessons' in enrollment.courseId &&
-            Array.isArray((enrollment.courseId as any).lessons) &&
-            (enrollment.courseId as any).lessons.length > 0
+            Array.isArray(
+              (enrollment.courseId as unknown as CourseWithLessons).lessons
+            ) &&
+            (enrollment.courseId as unknown as CourseWithLessons).lessons
+              .length > 0
           ) {
-            lessons = (enrollment.courseId as any).lessons;
+            lessons = (enrollment.courseId as unknown as CourseWithLessons)
+              .lessons;
           } else if (
             enrollment.courseId &&
             typeof enrollment.courseId === 'object' &&
             '_id' in enrollment.courseId
           ) {
             // Fallback: fetch lessons directly from Lesson model
-            const Lesson = require('../models/Lesson').Lesson;
-            lessons = await Lesson.find({ courseId: enrollment.courseId._id });
+            const { Lesson } = await import('../models/Lesson');
+            lessons = await Lesson.find({
+              courseId: (enrollment.courseId as unknown as { _id: string })._id,
+            });
           }
           const totalLessons = lessons.length;
-          const completedLessonsCount = lessons.filter((lesson: any) =>
+          const completedLessonsCount = lessons.filter((lesson) =>
             enrollment.completedLessons
               .map((id) => id.toString())
               .includes(lesson._id.toString())
@@ -145,9 +185,16 @@ export class EnrollmentController {
 
   // Get enrollment details
   static getEnrollmentDetails = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: AuthRequest, res: Response): Promise<void> => {
       const { enrollmentId } = req.params;
-      const studentId = (req as any).user._id;
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       const enrollment = await Enrollment.findOne({
         _id: enrollmentId,
@@ -185,10 +232,17 @@ export class EnrollmentController {
 
   // Update enrollment progress
   static updateProgress = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: AuthRequest, res: Response): Promise<void> => {
       const { enrollmentId } = req.params;
       const { lessonId, completed } = req.body;
-      const studentId = (req as any).user._id;
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       const enrollment = await Enrollment.findOne({
         _id: enrollmentId,
@@ -252,9 +306,16 @@ export class EnrollmentController {
 
   // Unenroll from course
   static unenrollFromCourse = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
+    async (req: AuthRequest, res: Response): Promise<void> => {
       const { enrollmentId } = req.params;
-      const studentId = (req as any).user._id;
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       const enrollment = await Enrollment.findOne({
         _id: enrollmentId,
@@ -285,8 +346,15 @@ export class EnrollmentController {
 
   // Get available courses (not enrolled)
   static getAvailableCourses = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-      const studentId = (req as any).user._id;
+    async (req: AuthRequest, res: Response): Promise<void> => {
+      const studentId = req.user?._id;
+
+      if (!studentId) {
+        res.status(401).json({
+          error: { message: 'User not authenticated', statusCode: 401 },
+        });
+        return;
+      }
 
       // Get student's enrolled course IDs
       const enrolledCourses = await Enrollment.find({

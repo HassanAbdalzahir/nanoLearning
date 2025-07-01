@@ -3,18 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import Image from "next/image";
+import {
+  ArrowLeft,
+  BookOpen,
+  Video,
+  FileText,
+  ChevronRight,
+} from "lucide-react";
 import { authViewModel } from "@/viewmodels/AuthViewModel";
 import { enrollmentViewModel } from "@/viewmodels/EnrollmentViewModel";
 import { lessonViewModel } from "@/viewmodels/LessonViewModel";
-import {
-  BookOpen,
-  ArrowLeft,
-  ChevronRight,
-  Video,
-  FileText,
-} from "lucide-react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export default function CourseDetailPage() {
   const router = useRouter();
@@ -269,9 +270,11 @@ export default function CourseDetailPage() {
           {/* Course Cover Image */}
           {course.coverImage && (
             <div className="mt-6 rounded-xl overflow-hidden">
-              <img
+              <Image
                 src={course.coverImage}
                 alt={course.title}
+                width={800}
+                height={256}
                 className="w-full h-64 object-cover"
               />
             </div>

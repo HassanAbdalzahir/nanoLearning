@@ -23,8 +23,9 @@ export class AuthController {
         })
         .status(201)
         .json({ user, token });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Signup failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -61,8 +62,9 @@ export class AuthController {
         })
         .status(201)
         .json({ user, token });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Signup failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -79,8 +81,9 @@ export class AuthController {
         })
         .status(200)
         .json({ user, token });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -96,8 +99,10 @@ export class AuthController {
       }
       const result = await authVM.requestPasswordReset(email);
       res.status(200).json(result);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Password reset request failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -109,8 +114,10 @@ export class AuthController {
       }
       const result = await authVM.verifyResetCode(email, resetCode);
       res.status(200).json(result);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Reset code verification failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -125,8 +132,10 @@ export class AuthController {
       }
       const result = await authVM.resetPassword(email, resetCode, newPassword);
       res.status(200).json(result);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Password reset failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -164,8 +173,9 @@ export class AuthController {
         });
         res.status(201).json({ user, token });
       }
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Signup failed';
+      next(createError(errorMessage, 400));
     }
   };
 }

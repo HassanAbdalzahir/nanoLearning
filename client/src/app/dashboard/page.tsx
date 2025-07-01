@@ -1,35 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useRouter } from "next/navigation";
-
-import { Header } from "@/components/Header";
-
-import { Footer } from "@/components/Footer";
-
-import { authViewModel } from "@/viewmodels/AuthViewModel";
-
-import { enrollmentViewModel } from "@/viewmodels/EnrollmentViewModel";
-
-import { User } from "@/models/User";
-
+import Image from "next/image";
 import {
-  BookOpen,
   Play,
-  Clock,
   CheckCircle,
-  ArrowRight,
+  Clock,
+  BookOpen,
   TrendingUp,
+  ArrowRight,
 } from "lucide-react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { authViewModel } from "@/viewmodels/AuthViewModel";
+import { enrollmentViewModel } from "@/viewmodels/EnrollmentViewModel";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [themeKey, setThemeKey] = useState(0);
   const [isDark, setIsDark] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Initialize auth viewmodel
@@ -37,94 +28,76 @@ export default function DashboardPage() {
 
     // Check authentication status
     const checkAuth = () => {
-      const authStatus = authViewModel.isAuthenticated();
-      const currentUser = authViewModel.user;
-      console.log("Dashboard - Auth check:", { authStatus, currentUser });
-      setIsAuthenticated(authStatus);
-      setUser(currentUser);
-      // Only set loading to false for non-students
-      if (!authStatus || currentUser?.role !== "student") {
-        setIsLoading(false);
-      }
+      setIsAuthenticated(authViewModel.isAuthenticated());
     };
 
     checkAuth();
 
-    // Subscribe to auth changes
-    const unsubscribeAuth = authViewModel.subscribe(() => {
-      const authStatus = authViewModel.isAuthenticated();
-      const currentUser = authViewModel.user;
-      console.log("Dashboard - Auth state changed:", {
-        authStatus,
-        currentUser,
-      });
-      setIsAuthenticated(authStatus);
-      setUser(currentUser);
-      if (!authStatus || currentUser?.role !== "student") {
-        setIsLoading(false);
-      }
-    });
-
-    // Load enrollments if student
-    if (
-      authViewModel.isAuthenticated() &&
-      authViewModel.user?.role === "student"
-    ) {
-      enrollmentViewModel.loadEnrollments();
-    }
-
-    // Initialize theme state
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const initialIsDark = savedTheme === "dark" || (!savedTheme && prefersDark);
-    setIsDark(initialIsDark);
-
-    // Listen for theme changes to trigger re-render
-    const handleThemeChange = (event: CustomEvent) => {
-      setIsDark(event.detail.isDark);
-      setThemeKey((prev) => prev + 1);
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      checkAuth();
     };
 
-    // Also listen for storage changes (in case theme is changed from another tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "theme") {
-        const newTheme = e.newValue;
-        setIsDark(newTheme === "dark");
-        setThemeKey((prev) => prev + 1);
-      }
+    window.addEventListener("storage", handleAuthChange);
+
+    // Check theme
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+
+    checkTheme();
+
+    // Listen for theme changes
+    const handleThemeChange = (event: CustomEvent) => {
+      setIsDark(event.detail.theme === "dark");
     };
 
     window.addEventListener("themeChange", handleThemeChange as EventListener);
-    window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      unsubscribeAuth();
+      window.removeEventListener("storage", handleAuthChange);
       window.removeEventListener(
         "themeChange",
         handleThemeChange as EventListener
       );
-      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
-  // Subscribe to enrollment viewmodel and control loading for students
   useEffect(() => {
-    if (isAuthenticated && user?.role === "student") {
-      const unsubscribe = enrollmentViewModel.subscribe(() => {
-        // Set loading to false when enrollments are done loading
-        if (!enrollmentViewModel.isLoading) {
-          setIsLoading(false);
-        }
-      });
-      // If enrollments already loaded, set loading to false
-      if (!enrollmentViewModel.isLoading) {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "theme") {
+        setIsDark(e.newValue === "dark");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    // Load enrollments
+    const loadEnrollments = async () => {
+      try {
+        setIsLoading(true);
+        await enrollmentViewModel.loadEnrollments();
+      } catch (error) {
+        console.error("Error loading enrollments:", error);
+      } finally {
         setIsLoading(false);
       }
-      return unsubscribe;
+    };
+
+    if (isAuthenticated) {
+      loadEnrollments();
     }
-  }, [isAuthenticated, user?.role]);
+  }, [isAuthenticated]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      router.push("/signin");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleViewCourse = (enrollmentId: string) => {
     router.push(`/dashboard/course/${enrollmentId}`);
@@ -134,300 +107,144 @@ export default function DashboardPage() {
     router.push(`/dashboard/course/${enrollmentId}`);
   };
 
-  if (!isAuthenticated && !isLoading) {
-    router.push("/signin");
-    return null;
-  }
-
-  // Redirect teachers to /instructor
-  if (user?.role === "teacher") {
-    router.push("/instructor");
-    return null;
-  }
+  const handleBrowseCourses = () => {
+    router.push("/courses");
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   const enrollments = enrollmentViewModel.enrollments;
-  const isLoadingEnrollment = enrollmentViewModel.isLoading;
-
-  // Calculate dashboard stats
-  const totalCourses = enrollments.length;
-  const completedCourses = enrollments.filter((e) => e.progress === 100).length;
-  const inProgressCourses = enrollments.filter(
-    (e) => e.progress > 0 && e.progress < 100
-  ).length;
-  const averageProgress =
-    totalCourses > 0
-      ? Math.round(
-          enrollments.reduce((sum, e) => sum + e.progress, 0) / totalCourses
-        )
-      : 0;
+  const viewModelLoading = enrollmentViewModel.isLoading;
 
   return (
-    <div
-      key={themeKey}
-      className="min-h-screen transition-colors duration-200"
-      style={{ backgroundColor: isDark ? "#0a0a0a" : "#ffffff" }}
-    >
+    <div className="min-h-screen">
       <Header />
 
-      {/* Enhanced Hero Section */}
-      <section
-        className="relative overflow-hidden py-16 lg:py-20"
-        style={{
-          backgroundColor: isDark ? "#1e293b" : "#f8fafc",
-        }}
-      >
-        {/* Content Container - properly positioned */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1
-              className="text-3xl md:text-5xl font-bold mb-4 relative z-20"
-              style={{
-                color: isDark ? "#ffffff" : "#111827",
-              }}
-            >
-              Welcome back,{" "}
-              <span
-                className="relative z-20"
-                style={{
-                  color: "#3b82f6",
-                }}
-              >
-                {user?.firstName}!
-              </span>
-            </h1>
-            <p
-              className="text-lg md:text-xl mb-8 max-w-2xl mx-auto relative z-20"
-              style={{
-                color: isDark ? "#d1d5db" : "#4b5563",
-              }}
-            >
-              Continue your learning journey and track your progress
-            </p>
-          </div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+            Welcome back!
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            Continue your learning journey where you left off.
+          </p>
         </div>
-      </section>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-8 relative z-10">
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div
-            className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            style={{
-              backgroundColor: isDark ? "#1e293b" : "#ffffff",
-              border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
-            }}
-          >
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div
-                className="p-4 rounded-2xl"
-                style={{ backgroundColor: isDark ? "#1e40af" : "#dbeafe" }}
-              >
-                <BookOpen
-                  className="w-7 h-7"
-                  style={{ color: isDark ? "#60a5fa" : "#2563eb" }}
-                />
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                >
-                  Total Courses
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Enrolled Courses
                 </p>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: isDark ? "#ffffff" : "#111827" }}
-                >
-                  {totalCourses}
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {enrollments.length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div
-            className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            style={{
-              backgroundColor: isDark ? "#1e293b" : "#ffffff",
-              border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
-            }}
-          >
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div
-                className="p-4 rounded-2xl"
-                style={{ backgroundColor: isDark ? "#166534" : "#dcfce7" }}
-              >
-                <CheckCircle
-                  className="w-7 h-7"
-                  style={{ color: isDark ? "#4ade80" : "#16a34a" }}
-                />
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                >
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Completed
-                </p>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: isDark ? "#ffffff" : "#111827" }}
-                >
-                  {completedCourses}
-                </p>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {enrollments.filter((e) => e.progress === 100).length}
+                </div>
               </div>
             </div>
           </div>
 
-          <div
-            className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            style={{
-              backgroundColor: isDark ? "#1e293b" : "#ffffff",
-              border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
-            }}
-          >
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div
-                className="p-4 rounded-2xl"
-                style={{ backgroundColor: isDark ? "#92400e" : "#fef3c7" }}
-              >
-                <Play
-                  className="w-7 h-7"
-                  style={{ color: isDark ? "#fbbf24" : "#d97706" }}
-                />
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                >
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   In Progress
-                </p>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: isDark ? "#ffffff" : "#111827" }}
-                >
-                  {inProgressCourses}
-                </p>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {
+                    enrollments.filter(
+                      (e) => e.progress > 0 && e.progress < 100
+                    ).length
+                  }
+                </div>
               </div>
             </div>
           </div>
 
-          <div
-            className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            style={{
-              backgroundColor: isDark ? "#1e293b" : "#ffffff",
-              border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
-            }}
-          >
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div
-                className="p-4 rounded-2xl"
-                style={{ backgroundColor: isDark ? "#7c3aed" : "#f3e8ff" }}
-              >
-                <TrendingUp
-                  className="w-7 h-7"
-                  style={{ color: isDark ? "#a78bfa" : "#9333ea" }}
-                />
+              <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900">
+                <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                >
-                  Avg Progress
-                </p>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: isDark ? "#ffffff" : "#111827" }}
-                >
-                  {averageProgress}%
-                </p>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Average Progress
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {enrollments.length > 0
+                    ? Math.round(
+                        enrollments.reduce((acc, e) => acc + e.progress, 0) /
+                          enrollments.length
+                      )
+                    : 0}
+                  %
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Enhanced My Courses Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2
-                className="text-3xl font-bold mb-2"
-                style={{ color: isDark ? "#ffffff" : "#111827" }}
-              >
-                My Courses
-              </h2>
-              <p
-                className="text-lg"
-                style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-              >
-                Continue where you left off
-              </p>
-            </div>
+        {/* Enrolled Courses */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Your Courses
+            </h2>
             <button
-              onClick={() => router.push("/courses")}
-              className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-              style={{
-                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px 0 rgba(59, 130, 246, 0.25)",
-              }}
+              onClick={handleBrowseCourses}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <span>Browse More</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          {isLoadingEnrollment ? (
-            <div
-              className="text-center py-16 rounded-2xl"
-              style={{ backgroundColor: isDark ? "#1e293b" : "#f9fafb" }}
-            >
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p
-                className="mt-4 text-lg"
-                style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-              >
-                Loading your courses...
-              </p>
+          {viewModelLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           ) : enrollments.length === 0 ? (
-            <div
-              className="text-center py-16 rounded-2xl"
-              style={{ backgroundColor: isDark ? "#1e293b" : "#f9fafb" }}
-            >
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-                style={{ backgroundColor: isDark ? "#374151" : "#e5e7eb" }}
-              >
-                <BookOpen
-                  className="w-10 h-10"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                />
-              </div>
-              <h3
-                className="text-2xl font-bold mb-3"
-                style={{ color: isDark ? "#ffffff" : "#111827" }}
-              >
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
                 No courses enrolled yet
               </h3>
-              <p
-                className="mb-8 text-lg max-w-md mx-auto"
-                style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-              >
-                Start your learning journey by enrolling in your first course
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Start your learning journey by enrolling in a course
               </p>
               <button
-                onClick={() => router.push("/courses")}
-                className="px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                onClick={handleBrowseCourses}
+                className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto"
                 style={{
                   background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
                   color: "#ffffff",
@@ -463,10 +280,12 @@ export default function DashboardPage() {
                     {/* Enhanced Course Image */}
                     <div className="relative h-48">
                       {enrollment.courseId.coverImage ? (
-                        <img
+                        <Image
                           src={enrollment.courseId.coverImage}
                           alt={enrollment.courseId.title}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">

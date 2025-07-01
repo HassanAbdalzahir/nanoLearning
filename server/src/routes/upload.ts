@@ -1,10 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import {
   uploadVideo,
   uploadAttachment,
   uploadCoverImage,
 } from '../utils/cloudinary';
 import { auth } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -15,28 +16,34 @@ router.use(auth);
 router.post(
   '/video',
   (uploadVideo as any).single('video'),
-  async (req: any, res: any) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!req.file) {
-        return res.status(400).json({
+      const file = req.file as any;
+      if (!file) {
+        res.status(400).json({
           error: { message: 'No video file uploaded', statusCode: 400 },
         });
+        return;
       }
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        url: req.file.path,
-        publicId: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
+        url: file.path,
+        publicId: file.filename,
+        originalName: file.originalname,
+        size: file.size,
       });
-    } catch (error: any) {
-      console.error('Video upload error:', error);
-      return res.status(500).json({
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Video upload failed';
+      logger.error('Video upload error:', error);
+      res.status(500).json({
         error: {
-          message: error?.message || 'Video upload failed',
+          message: errorMessage,
           stack:
             process.env['NODE_ENV'] === 'development'
-              ? error?.stack
+              ? error instanceof Error
+                ? error.stack
+                : undefined
               : undefined,
           statusCode: 500,
         },
@@ -49,28 +56,34 @@ router.post(
 router.post(
   '/attachment',
   (uploadAttachment as any).single('attachment'),
-  async (req: any, res: any) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!req.file) {
-        return res.status(400).json({
+      const file = req.file as any;
+      if (!file) {
+        res.status(400).json({
           error: { message: 'No attachment file uploaded', statusCode: 400 },
         });
+        return;
       }
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        url: req.file.path,
-        publicId: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
+        url: file.path,
+        publicId: file.filename,
+        originalName: file.originalname,
+        size: file.size,
       });
-    } catch (error: any) {
-      console.error('Attachment upload error:', error);
-      return res.status(500).json({
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Attachment upload failed';
+      logger.error('Attachment upload error:', error);
+      res.status(500).json({
         error: {
-          message: error?.message || 'Attachment upload failed',
+          message: errorMessage,
           stack:
             process.env['NODE_ENV'] === 'development'
-              ? error?.stack
+              ? error instanceof Error
+                ? error.stack
+                : undefined
               : undefined,
           statusCode: 500,
         },
@@ -83,28 +96,34 @@ router.post(
 router.post(
   '/cover-image',
   (uploadCoverImage as any).single('coverImage'),
-  async (req: any, res: any) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!req.file) {
-        return res.status(400).json({
+      const file = req.file as any;
+      if (!file) {
+        res.status(400).json({
           error: { message: 'No image file uploaded', statusCode: 400 },
         });
+        return;
       }
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        url: req.file.path,
-        publicId: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
+        url: file.path,
+        publicId: file.filename,
+        originalName: file.originalname,
+        size: file.size,
       });
-    } catch (error: any) {
-      console.error('Cover image upload error:', error);
-      return res.status(500).json({
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Cover image upload failed';
+      logger.error('Cover image upload error:', error);
+      res.status(500).json({
         error: {
-          message: error?.message || 'Cover image upload failed',
+          message: errorMessage,
           stack:
             process.env['NODE_ENV'] === 'development'
-              ? error?.stack
+              ? error instanceof Error
+                ? error.stack
+                : undefined
               : undefined,
           statusCode: 500,
         },

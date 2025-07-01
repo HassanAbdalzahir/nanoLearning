@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
+import FileUpload from "./FileUpload";
 import {
   Course,
   CreateCourseData,
@@ -8,7 +10,6 @@ import {
 } from "@/services/courseService";
 import { uploadService } from "@/services/uploadService";
 import { X } from "lucide-react";
-import FileUpload from "./FileUpload";
 
 interface CourseFormProps {
   course?: Course | null;
@@ -326,13 +327,12 @@ export default function CourseForm({
             {/* Image Preview */}
             {(formData.coverImage || uploadedImage) && (
               <div className="mt-3">
-                <img
+                <Image
                   src={uploadedImage?.url || formData.coverImage}
                   alt="Cover preview"
+                  width={400}
+                  height={128}
                   className="w-full h-32 object-cover rounded-md border border-gray-300 dark:border-gray-600"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
                 />
               </div>
             )}

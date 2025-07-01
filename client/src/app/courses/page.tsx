@@ -2,111 +2,65 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { authViewModel } from "@/viewmodels/AuthViewModel";
-import { enrollmentViewModel } from "@/viewmodels/EnrollmentViewModel";
+import Image from "next/image";
 import {
-  BookOpen,
-  Lock,
-  ArrowRight,
-  Search,
-  Clock,
-  ChevronDown,
   Play,
+  Clock,
+  ArrowRight,
+  Lock,
+  BookOpen,
+  TrendingUp,
 } from "lucide-react";
+import { authViewModel } from "@/viewmodels/AuthViewModel";
 
 export default function CoursesPage() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [sortBy, setSortBy] = useState("popular");
   const [isDark, setIsDark] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Initialize auth viewmodel
     authViewModel.initialize();
 
-    // Debug API URL
-    console.log(
-      "API URL:",
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
-    );
-
-    // Load courses based on authentication status
-    const loadCourses = async () => {
-      setIsLoading(true);
-      try {
-        const currentAuthStatus = authViewModel.isAuthenticated();
-        const currentUser = authViewModel.user;
-
-        console.log(
-          "Loading courses - Auth status:",
-          currentAuthStatus,
-          "User:",
-          currentUser
-        );
-
-        if (currentAuthStatus && currentUser?.role === "student") {
-          // For authenticated students, load available courses (courses they can enroll in)
-          console.log("Loading available courses for student");
-          await enrollmentViewModel.loadAvailableCourses();
-        } else {
-          // For unauthenticated users or teachers, load public courses
-          console.log("Loading public courses");
-          await enrollmentViewModel.loadPublicCourses();
-        }
-
-        console.log("Courses loaded:", enrollmentViewModel.availableCourses);
-      } catch (error) {
-        console.error("Failed to load courses:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    // Check authentication status
+    const checkAuth = () => {
+      setIsAuthenticated(authViewModel.isAuthenticated());
     };
 
-    // Initial load
-    loadCourses();
+    checkAuth();
 
-    // Subscribe to auth changes
-    const unsubscribeAuth = authViewModel.subscribe((authState) => {
-      const newAuthStatus = authState.user !== null;
-      setIsAuthenticated(newAuthStatus);
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      checkAuth();
+    };
 
-      // Reload courses when auth status changes
-      loadCourses();
-    });
+    window.addEventListener("storage", handleAuthChange);
 
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    setIsDark(savedTheme === "dark" || (!savedTheme && prefersDark));
+    // Check theme
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+
+    checkTheme();
 
     // Listen for theme changes
     const handleThemeChange = (event: CustomEvent) => {
-      setIsDark(event.detail.isDark);
+      setIsDark(event.detail.theme === "dark");
     };
 
     window.addEventListener("themeChange", handleThemeChange as EventListener);
 
+    // Set loading to false after initialization
+    setLoading(false);
+
     return () => {
+      window.removeEventListener("storage", handleAuthChange);
       window.removeEventListener(
         "themeChange",
         handleThemeChange as EventListener
       );
-      unsubscribeAuth();
     };
-  }, []);
-
-  // Subscribe to enrollment viewmodel for course data changes
-  useEffect(() => {
-    const unsubscribe = enrollmentViewModel.subscribe(() => {
-      // Force re-render when enrollment data changes
-    });
-    return unsubscribe;
   }, []);
 
   const handleSignIn = () => {
@@ -114,236 +68,140 @@ export default function CoursesPage() {
   };
 
   const handleSignUp = () => {
-    router.push("/signup/student");
+    router.push("/signup");
   };
 
   const handleEnroll = async (courseId: string) => {
-    if (!authViewModel.isAuthenticated()) {
+    if (!isAuthenticated) {
       router.push("/signin");
       return;
     }
 
-    const success = await enrollmentViewModel.enrollInCourse(courseId);
-    if (success) {
-      // Show success message or redirect to dashboard
+    try {
+      // This would be implemented with enrollment service
+      console.log("Enrolling in course:", courseId);
       router.push("/dashboard");
+    } catch (error) {
+      console.error("Enrollment error:", error);
+      alert("Failed to enroll in course. Please try again.");
     }
   };
 
-  const categories = [
-    "All",
-    "Programming",
-    "Design",
-    "Business",
-    "Marketing",
-    "Finance",
-    "Health & Fitness",
-    "Music",
-    "Photography",
-    "Language",
-    "Technology",
-    "Other",
+  // Mock data for demonstration
+  const sortedCourses = [
+    {
+      _id: "1",
+      title: "Introduction to React",
+      description: "Learn the basics of React development",
+      category: "technology",
+      coverImage: "",
+      price: 49.99,
+      type: "video",
+      isPublished: true,
+      instructorId: { firstName: "John", lastName: "Doe" },
+      lessons: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      _id: "2",
+      title: "Advanced JavaScript",
+      description: "Master JavaScript concepts and patterns",
+      category: "technology",
+      coverImage: "",
+      price: 79.99,
+      type: "text",
+      isPublished: true,
+      instructorId: { firstName: "Jane", lastName: "Smith" },
+      lessons: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   ];
 
-  const availableCourses = enrollmentViewModel.availableCourses;
-  const viewModelLoading = enrollmentViewModel.isLoading;
-
-  const filteredCourses = availableCourses.filter((course) => {
-    const matchesSearch =
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${course.instructorId.firstName} ${course.instructorId.lastName}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || course.category === selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
-
-  const sortedCourses = [...filteredCourses].sort((a, b) => {
-    switch (sortBy) {
-      case "popular":
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "newest":
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      default:
-        return 0;
-    }
-  });
-
   return (
-    <div
-      className="min-h-screen transition-colors duration-200"
-      style={{ backgroundColor: isDark ? "#0a0a0a" : "#ffffff" }}
-    >
-      <Header />
-
+    <div>
       {/* Hero Section */}
       <section
         className="py-20"
         style={{
-          background: isDark
-            ? "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"
-            : "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-4xl mx-auto">
             <h1
-              className="text-4xl md:text-5xl font-bold mb-6"
-              style={{ color: isDark ? "#ffffff" : "#111827" }}
+              className="text-4xl md:text-6xl font-bold mb-6"
+              style={{ color: "#ffffff" }}
             >
-              Explore Our Courses
+              Discover Amazing Courses
             </h1>
             <p
-              className="text-xl mb-8 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl mb-8"
+              style={{ color: "#e2e8f0" }}
+            >
+              Learn from expert instructors and advance your skills
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex items-center justify-center space-x-2 text-white">
+                <BookOpen className="w-5 h-5" />
+                <span>500+ Courses</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-white">
+                <Clock className="w-5 h-5" />
+                <span>4.8/5 Rating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Courses Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h2
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: isDark ? "#ffffff" : "#111827" }}
+            >
+              {isAuthenticated ? "Available Courses" : "Featured Courses"}
+            </h2>
+            <p
+              className="text-lg"
               style={{ color: isDark ? "#d1d5db" : "#4b5563" }}
             >
-              Discover high-quality courses taught by industry experts. Start
-              your learning journey today and unlock your potential.
+              {isAuthenticated
+                ? "Courses you can enroll in"
+                : "Start your learning journey with these courses"}
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Filters Section */}
-      <section
-        className="py-8 border-b"
-        style={{
-          backgroundColor: isDark ? "#0a0a0a" : "#ffffff",
-          borderColor: isDark ? "#374151" : "#e5e7eb",
-        }}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
-                style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-              />
-              <input
-                type="text"
-                placeholder="Search courses or instructors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border transition-colors"
-                style={{
-                  backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                  borderColor: isDark ? "#374151" : "#d1d5db",
-                  color: isDark ? "#ffffff" : "#111827",
-                }}
-              />
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
+          )}
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4">
-              {/* Category Filter */}
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="appearance-none pl-4 pr-10 py-3 rounded-lg border transition-colors cursor-pointer"
-                  style={{
-                    backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#d1d5db",
-                    color: isDark ? "#ffffff" : "#111827",
-                  }}
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                />
-              </div>
-
-              {/* Sort */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none pl-4 pr-10 py-3 rounded-lg border transition-colors cursor-pointer"
-                  style={{
-                    backgroundColor: isDark ? "#1e293b" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#d1d5db",
-                    color: isDark ? "#ffffff" : "#111827",
-                  }}
-                >
-                  <option value="popular">Most Popular</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="newest">Newest</option>
-                </select>
-                <ChevronDown
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                  style={{ color: isDark ? "#9ca3af" : "#6b7280" }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Courses Grid */}
-      <section
-        className="py-16"
-        style={{ backgroundColor: isDark ? "#0a0a0a" : "#ffffff" }}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {isLoading || viewModelLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p
-                className="mt-4"
-                style={{ color: isDark ? "#d1d5db" : "#4b5563" }}
-              >
-                Loading courses...
-              </p>
-            </div>
-          ) : sortedCourses.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen
-                className="w-16 h-16 mx-auto mb-4"
-                style={{ color: isDark ? "#6b7280" : "#9ca3af" }}
-              />
-              <h3
-                className="text-xl font-semibold mb-2"
-                style={{ color: isDark ? "#ffffff" : "#111827" }}
-              >
-                No courses found
-              </h3>
-              <p style={{ color: isDark ? "#d1d5db" : "#4b5563" }}>
-                Try adjusting your search criteria or filters.
-              </p>
-            </div>
-          ) : (
+          {/* Courses Grid */}
+          {!loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {sortedCourses.map((course) => (
                 <div
                   key={course._id}
-                  className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
-                  style={{ backgroundColor: isDark ? "#1e293b" : "#ffffff" }}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105"
+                  style={{ borderColor: isDark ? "#374151" : "#e5e7eb" }}
                 >
                   {/* Course Image */}
                   <div className="relative h-48">
                     {course.coverImage ? (
-                      <img
+                      <Image
                         src={course.coverImage}
                         alt={course.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -540,18 +398,26 @@ export default function CoursesPage() {
               Ready to Start Learning?
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              Join thousands of learners who are already transforming their
-              lives with our courses.
+              Join thousands of students who are already learning and growing
             </p>
-            <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center space-x-2 mx-auto">
-              <span>Browse All Courses</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={handleSignUp}
+                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2"
+              >
+                <TrendingUp className="w-5 h-5" />
+                <span>Get Started</span>
+              </button>
+              <button
+                onClick={handleSignIn}
+                className="px-8 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { CourseViewModel } from '../viewmodels/CourseViewModel';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 const courseVM = new CourseViewModel();
 
@@ -30,8 +31,10 @@ export class CourseController {
 
       const course = await courseVM.createCourse(courseData);
       res.status(201).json(course);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Course creation failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -48,8 +51,10 @@ export class CourseController {
 
       const courses = await courseVM.getCoursesByInstructor(instructorId);
       res.status(200).json(courses);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch courses';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -76,8 +81,10 @@ export class CourseController {
       }
 
       res.status(200).json(course);
-    } catch (err: any) {
-      next(createError(err.message, 404));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Course not found';
+      next(createError(errorMessage, 404));
     }
   };
 
@@ -108,8 +115,10 @@ export class CourseController {
       }
 
       res.status(200).json(course);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Course update failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -136,8 +145,10 @@ export class CourseController {
       }
 
       res.status(200).json({ message: 'Course deleted successfully' });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Course deletion failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -164,8 +175,10 @@ export class CourseController {
       }
 
       res.status(200).json(course);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to toggle publish status';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -182,8 +195,10 @@ export class CourseController {
 
       const stats = await courseVM.getCourseStats(instructorId);
       res.status(200).json(stats);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch course stats';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -194,9 +209,9 @@ export class CourseController {
     next: NextFunction
   ) => {
     try {
-      console.log('Getting published courses...');
+      logger.info('Getting published courses...');
       const courses = await courseVM.getPublishedCourses();
-      console.log('Found courses:', courses.length, courses);
+      logger.info(`Found ${courses.length} published courses`);
 
       // Transform the data to match client expectations
       const transformedCourses = courses.map((course) => ({
@@ -214,11 +229,14 @@ export class CourseController {
         updatedAt: course.updatedAt,
       }));
 
-      console.log('Transformed courses:', transformedCourses);
       res.status(200).json(transformedCourses);
-    } catch (err: any) {
-      console.error('Error getting published courses:', err);
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to fetch published courses';
+      logger.error('Error getting published courses:', err);
+      next(createError(errorMessage, 400));
     }
   };
 }

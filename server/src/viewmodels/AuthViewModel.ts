@@ -28,8 +28,8 @@ export class AuthViewModel {
         String(user.email),
         `${user.firstName} ${user.lastName}`
       );
-    } catch (error) {
-      console.warn('Failed to send welcome email:', error);
+    } catch {
+      console.warn('Failed to send welcome email');
       // Don't throw error, continue with signup
     }
 
@@ -55,8 +55,8 @@ export class AuthViewModel {
         String(user.email),
         `${user.firstName} ${user.lastName}`
       );
-    } catch (error) {
-      console.warn('Failed to send welcome email:', error);
+    } catch {
+      console.warn('Failed to send welcome email');
       // Don't throw error, continue with signup
     }
 
@@ -110,7 +110,7 @@ export class AuthViewModel {
         resetCode,
         `${user.firstName} ${user.lastName}`
       );
-    } catch (error) {
+    } catch {
       // Clear the reset token if email fails
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;

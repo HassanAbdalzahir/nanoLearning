@@ -1,8 +1,8 @@
 // Use dynamic import for node-fetch to avoid ESM issues
-let fetch: any;
+let fetch: typeof import('node-fetch').default | undefined;
 
 // Initialize fetch function
-async function initFetch() {
+async function initFetch(): Promise<typeof import('node-fetch').default> {
   if (!fetch) {
     const nodeFetch = await import('node-fetch');
     fetch = nodeFetch.default;

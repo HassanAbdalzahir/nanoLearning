@@ -23,14 +23,14 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: 'https://nanolearning.nanocode.site'  , //config.corsOrigin,
+    origin: config.corsOrigin,
     credentials: true,
   })
 );
 
 // Body parsing middleware
 app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: '100mb' ,extended: true }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(cookieParser());
 
 // Custom logging middleware (cleaner than morgan)

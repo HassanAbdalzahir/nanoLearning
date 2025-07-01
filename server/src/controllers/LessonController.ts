@@ -18,8 +18,10 @@ export class LessonController {
 
       const lesson = await lessonVM.createLesson(lessonData);
       res.status(201).json(lesson);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Lesson creation failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -42,8 +44,10 @@ export class LessonController {
 
       const lessons = await lessonVM.getLessonsByCourse(courseId, instructorId);
       res.status(200).json(lessons);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch lessons';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -70,8 +74,10 @@ export class LessonController {
       }
 
       res.status(200).json(lesson);
-    } catch (err: any) {
-      next(createError(err.message, 404));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Lesson not found';
+      next(createError(errorMessage, 404));
     }
   };
 
@@ -102,8 +108,10 @@ export class LessonController {
       }
 
       res.status(200).json(lesson);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Lesson update failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -130,8 +138,10 @@ export class LessonController {
       }
 
       res.status(200).json({ message: 'Lesson deleted successfully' });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Lesson deletion failed';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -163,8 +173,10 @@ export class LessonController {
         lessonOrders
       );
       res.status(200).json(lessons);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to reorder lessons';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -187,8 +199,10 @@ export class LessonController {
 
       const nextOrder = await lessonVM.getNextLessonOrder(courseId);
       res.status(200).json({ nextOrder });
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to get next lesson order';
+      next(createError(errorMessage, 400));
     }
   };
 
@@ -221,8 +235,12 @@ export class LessonController {
         undefined
       );
       res.status(200).json(lessons);
-    } catch (err: any) {
-      next(createError(err.message, 400));
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to fetch lessons for enrollment';
+      next(createError(errorMessage, 400));
     }
   };
 }
