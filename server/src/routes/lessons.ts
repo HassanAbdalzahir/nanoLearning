@@ -15,6 +15,11 @@ router.get(
   '/course/:courseId',
   asyncHandler(lessonController.getLessonsByCourse)
 );
+router.get(
+  '/enrollment/:enrollmentId',
+  auth,
+  asyncHandler(lessonController.getLessonsByEnrollment)
+);
 router.get('/:lessonId', asyncHandler(lessonController.getLessonById));
 router.put('/:lessonId', asyncHandler(lessonController.updateLesson));
 router.delete('/:lessonId', asyncHandler(lessonController.deleteLesson));
@@ -25,11 +30,6 @@ router.post(
 router.get(
   '/course/:courseId/next-order',
   asyncHandler(lessonController.getNextLessonOrder)
-);
-router.get(
-  '/enrollment/:enrollmentId',
-  auth,
-  asyncHandler(lessonController.getLessonsByEnrollment)
 );
 
 export default router;
