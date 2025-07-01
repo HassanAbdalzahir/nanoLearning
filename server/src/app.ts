@@ -12,7 +12,6 @@ import lessonRoutes from './routes/lessons';
 import uploadRoutes from './routes/upload';
 import enrollmentRoutes from './routes/enrollments';
 import { logger } from './utils/logger';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const cookieParser = require('cookie-parser');
 
 export const app = express();
