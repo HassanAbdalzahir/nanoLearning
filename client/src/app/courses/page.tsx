@@ -22,6 +22,7 @@ import {
 export default function CoursesPage() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<(Course | AvailableCourse)[]>([]);
@@ -46,11 +47,15 @@ export default function CoursesPage() {
 
     window.addEventListener("storage", handleAuthChange);
 
-    // Check theme
+    // Check theme - use a timeout to ensure DOM is ready
     const checkTheme = () => {
       setIsDark(document.documentElement.classList.contains("dark"));
     };
 
+    // Set mounted to true after component mounts
+    setMounted(true);
+
+    // Check theme after mounting to avoid hydration mismatch
     checkTheme();
 
     // Listen for theme changes
@@ -129,6 +134,15 @@ export default function CoursesPage() {
       setEnrolling(null);
     }
   };
+
+  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div>

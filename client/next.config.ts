@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: "/api/:path*",
-        destination: "http://localhost:3001/api/:path*",
+        protocol: "https",
+        hostname: "res.cloudinary.com",
       },
-    ];
+      {
+        protocol: "https",
+        hostname: "img.favpng.com",
+      },
+    ],
   },
 };
 
