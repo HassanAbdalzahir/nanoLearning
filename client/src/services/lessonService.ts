@@ -121,13 +121,7 @@ export class LessonService {
   }
 
   async getLessonsByEnrollment(enrollmentId: string): Promise<Lesson[]> {
-    const res = await fetch(`/api/lessons/enrollment/${enrollmentId}`, {
-      credentials: "include",
-    });
-    if (!res.ok) {
-      throw new Error("Failed to fetch lessons for enrollment");
-    }
-    return res.json();
+    return this.request<Lesson[]>(`/lessons/enrollment/${enrollmentId}`);
   }
 }
 

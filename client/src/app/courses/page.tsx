@@ -10,14 +10,23 @@ import {
   Lock,
   BookOpen,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import { authViewModel } from "@/viewmodels/AuthViewModel";
+import { courseService, Course } from "@/services/courseService";
+import {
+  enrollmentService,
+  AvailableCourse,
+} from "@/services/enrollmentService";
 
 export default function CoursesPage() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<(Course | AvailableCourse)[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize auth viewmodel
@@ -51,8 +60,8 @@ export default function CoursesPage() {
 
     window.addEventListener("themeChange", handleThemeChange as EventListener);
 
-    // Set loading to false after initialization
-    setLoading(false);
+    // Load courses
+    loadCourses();
 
     return () => {
       window.removeEventListener("storage", handleAuthChange);
@@ -62,6 +71,32 @@ export default function CoursesPage() {
       );
     };
   }, []);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      let coursesData: (Course | AvailableCourse)[];
+
+      if (isAuthenticated) {
+        // Load available courses for authenticated users
+        coursesData = await enrollmentService.getAvailableCourses();
+      } else {
+        // Load public courses for unauthenticated users
+        coursesData = await courseService.getPublishedCourses();
+      }
+
+      setCourses(coursesData);
+    } catch (error) {
+      console.error("Error loading courses:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to load courses"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignIn = () => {
     router.push("/signin");
@@ -78,46 +113,22 @@ export default function CoursesPage() {
     }
 
     try {
-      // This would be implemented with enrollment service
-      console.log("Enrolling in course:", courseId);
+      setEnrolling(courseId);
+      const enrollment = await enrollmentService.enrollInCourse(courseId);
+      console.log("Successfully enrolled:", enrollment);
+
+      // Remove the course from the list since user is now enrolled
+      setCourses((prev) => prev.filter((course) => course._id !== courseId));
+
+      // Optionally redirect to dashboard
       router.push("/dashboard");
     } catch (error) {
       console.error("Enrollment error:", error);
       alert("Failed to enroll in course. Please try again.");
+    } finally {
+      setEnrolling(null);
     }
   };
-
-  // Mock data for demonstration
-  const sortedCourses = [
-    {
-      _id: "1",
-      title: "Introduction to React",
-      description: "Learn the basics of React development",
-      category: "technology",
-      coverImage: "",
-      price: 49.99,
-      type: "video",
-      isPublished: true,
-      instructorId: { firstName: "John", lastName: "Doe" },
-      lessons: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      _id: "2",
-      title: "Advanced JavaScript",
-      description: "Master JavaScript concepts and patterns",
-      category: "technology",
-      coverImage: "",
-      price: 79.99,
-      type: "text",
-      isPublished: true,
-      instructorId: { firstName: "Jane", lastName: "Smith" },
-      lessons: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
 
   return (
     <div>
@@ -145,7 +156,7 @@ export default function CoursesPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <div className="flex items-center justify-center space-x-2 text-white">
                 <BookOpen className="w-5 h-5" />
-                <span>500+ Courses</span>
+                <span>{courses.length}+ Courses</span>
               </div>
               <div className="flex items-center justify-center space-x-2 text-white">
                 <Clock className="w-5 h-5" />
@@ -177,17 +188,36 @@ export default function CoursesPage() {
             </p>
           </div>
 
+          {/* Error State */}
+          {error && (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-center">
+                <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+                <h3 className="text-xl font-semibold mb-2 text-red-600">
+                  Failed to Load Courses
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+                <button
+                  onClick={loadCourses}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Loading State */}
-          {loading && (
+          {loading && !error && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           )}
 
           {/* Courses Grid */}
-          {!loading && (
+          {!loading && !error && courses.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sortedCourses.map((course) => (
+              {courses.map((course) => (
                 <div
                   key={course._id}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105"
@@ -270,9 +300,10 @@ export default function CoursesPage() {
                           <span
                             style={{ color: isDark ? "#d1d5db" : "#4b5563" }}
                           >
-                            {course.type === "video"
-                              ? "Video Course"
-                              : "Text Course"}
+                            {"lessons" in course
+                              ? course.lessons?.length || 0
+                              : 0}{" "}
+                            lessons
                           </span>
                         </div>
                       </div>
@@ -290,10 +321,20 @@ export default function CoursesPage() {
                       </div>
                       <button
                         onClick={() => handleEnroll(course._id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                        disabled={enrolling === course._id}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
                       >
-                        <span>Enroll</span>
-                        <ArrowRight className="w-4 h-4" />
+                        {enrolling === course._id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Enrolling...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Enroll</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -302,8 +343,23 @@ export default function CoursesPage() {
             </div>
           )}
 
+          {/* Empty State */}
+          {!loading && !error && courses.length === 0 && (
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                No courses available
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {isAuthenticated
+                  ? "There are no courses available for enrollment at the moment."
+                  : "Check back later for new courses."}
+              </p>
+            </div>
+          )}
+
           {/* Show sign-in prompt for unauthenticated users after courses */}
-          {!isAuthenticated && sortedCourses.length > 0 && (
+          {!isAuthenticated && courses.length > 0 && (
             <div className="mt-16 max-w-2xl mx-auto text-center">
               <div className="mb-8">
                 <div className="flex justify-center mb-6">

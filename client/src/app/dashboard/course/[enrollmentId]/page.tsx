@@ -138,9 +138,17 @@ export default function CourseDetailPage() {
 
   // Debug logging
   console.log("CourseDetailPage:", {
+    enrollmentId,
     lessons,
     isLoadingLessons,
     lessonsError,
+    enrollment: enrollment
+      ? {
+          _id: enrollment._id,
+          courseId: enrollment.courseId._id,
+          progress: enrollment.progress,
+        }
+      : null,
   });
 
   if (!enrollment || !course) {
@@ -346,7 +354,19 @@ export default function CourseDetailPage() {
                       borderColor: isDark ? "#991b1b" : "#fecaca",
                     }}
                   >
-                    <strong>Error loading lessons:</strong> {lessonsError}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong>Error loading lessons:</strong> {lessonsError}
+                      </div>
+                      <button
+                        onClick={() =>
+                          lessonViewModel.loadLessonsByEnrollment(enrollmentId)
+                        }
+                        className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 ) : isLoadingLessons ? (
                   <div className="col-span-full text-center py-8">
